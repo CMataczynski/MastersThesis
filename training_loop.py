@@ -27,31 +27,31 @@ def create_experiment_name(experiment_name, is_odenet):
 
 
 
-def trainODE(experiment_name, dataset_loaders,
+def trainODE(experiment_name, dataset_loaders
             ,class_dict, training_length=150,
-            is_odenet=True, batch_size=256):
+            is_odenet=True, batch_size=256, lr=0.1):
     '''
     experiment_name: string with name of the experiments
     dataset_loaders: (training loader, testing loader) with type of DataLoader
 
     '''
-    lr = 0.1
+    no_classes = len(class_dict.keys())
     device = torch.device('cuda:' + str(0) if torch.cuda.is_available() else 'cpu')
     name = create_experiment_name(experiment_name, is_odenet)
     writer = SummaryWriter(log_dir='experiments/' + str(name))
     makedirs(os.path.join(os.getcwd(), "experiments", name))
 
     if is_odenet:
-        model = NeuralODE()
+        model = NeuralODE(no_classes)
     else:
-        model = ResNet()
+        model = ResNet(no_classes)
 
     criterion = nn.CrossEntropyLoss().to(device)
     train_loader, test_loader = dataset_loaders
     data_gen = inf_generator(train_loader)
     batches_per_epoch = len(train_loader)
 
-    lr_fn = learning_rate_with_decay(
+    lr_fn = learning_rate_with_decay(lr,
          batch_size, batch_denom=batch_size, batches_per_epoch=batches_per_epoch,
          boundary_epochs=[60, 100, 140],decay_rates=[1, 0.1, 0.01, 0.001]
          )
@@ -72,8 +72,9 @@ def trainODE(experiment_name, dataset_loaders,
         model.train()
         optimizer.zero_grad()
         dct = data_gen.__next__()
-        x = dct["image"].float()
-        y = dct["label"]
+        # print(dct)
+        x = dct[0].float()
+        y = dct[1]
         x = x.to(device)
         y = y.to(device)
         # x = x.unsqueeze(1)
@@ -81,8 +82,8 @@ def trainODE(experiment_name, dataset_loaders,
         loss = criterion(logits, y)
 
         if is_odenet:
-            nfe_forward = feature_layers[0].nfe
-            feature_layers[0].nfe = 0
+            nfe_forward = model.feature_layers[0].nfe
+            model.feature_layers[0].nfe = 0
 
         loss.backward()
         optimizer.step()
@@ -91,8 +92,8 @@ def trainODE(experiment_name, dataset_loaders,
             writer.add_scalar("Loss/train", running_loss / 10, itr)
             running_loss = 0.0
         if is_odenet:
-            nfe_backward = feature_layers[0].nfe
-            feature_layers[0].nfe = 0
+            nfe_backward = model.feature_layers[0].nfe
+            model.feature_layers[0].nfe = 0
 
         batch_time_meter.update(time.time() - end)
         if is_odenet:
@@ -103,7 +104,7 @@ def trainODE(experiment_name, dataset_loaders,
         if itr % batches_per_epoch == 0:
             with torch.no_grad():
                 model.eval()
-                val_acc, f1 = accuracy(model, test_loader)
+                val_acc, f1 = accuracy_and_f1(model, test_loader, no_classes, device=device)
                 if f1 > best_f1:
                     torch.save({'state_dict': model.state_dict()},
                                 os.path.join(os.getcwd(),"experiments", name,
@@ -118,9 +119,9 @@ def trainODE(experiment_name, dataset_loaders,
     labs = []
     preds = []
     for data in test_loader:
-        x = data['image'].float().to(device)
+        x = data[0].float().to(device)
         # x = x.unsqueeze(1)
-        y = data['label'].tolist()
+        y = data[1].tolist()
         labs += y
         outputs = model(x)
         predicted = torch.max(outputs, 1).indices

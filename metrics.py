@@ -7,17 +7,16 @@ import matplotlib
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 
-def accuracy_and_f1(model, dataset_loader, device="cpu"):
+def accuracy_and_f1(model, dataset_loader,no_classes , device="cpu"):
     total_correct = 0
     labs = []
     preds = []
     for data in dataset_loader:
-        x = data['image'].float().to(device)
-        x = x.unsqueeze(1)
-        y = one_hot(np.array(data['label'].numpy()), 5)
+        x = data[0].float().to(device)
+        y = one_hot(np.array(data[1].numpy()), no_classes)
         target_class = np.argmax(y, axis=1)
         predicted_class = np.argmax(model(x).cpu().detach().numpy(), axis=1)
-        labs += data['label'].tolist()
+        labs += data[1].tolist()
         preds += predicted_class.tolist()
         total_correct += np.sum(predicted_class == target_class)
     f1 = f1_score(labs, preds, average='weighted')
@@ -25,6 +24,9 @@ def accuracy_and_f1(model, dataset_loader, device="cpu"):
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+def one_hot(x, K):
+    return np.array(x[:, None] == np.arange(K)[None, :], dtype=int)
 
 def plot_confusion_matrix(correct_labels, predict_labels, labels, normalize=False):
     cm = confusion_matrix(correct_labels, predict_labels, labels=labels)
