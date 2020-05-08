@@ -53,7 +53,7 @@ def trainODE(experiment_name, dataset_loaders
 
     lr_fn = learning_rate_with_decay(lr,
          batch_size, batch_denom=batch_size, batches_per_epoch=batches_per_epoch,
-         boundary_epochs=[60, 100, 140],decay_rates=[1, 0.1, 0.01, 0.001]
+         boundary_epochs=[30, 40, 50],decay_rates=[1, 0.1, 0.01, 0.001]
          )
 
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)

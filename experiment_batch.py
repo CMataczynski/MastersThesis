@@ -1,5 +1,6 @@
 import torchvision
 from training_loop import trainODE
+from torchvision.transforms import Compose, ColorJitter, RandomAffine, RandomApply, RandomHorizontalFlip, Normalize, RandomCrop
 import pandas as pd
 import torch
 
@@ -16,10 +17,18 @@ experiments = [
         "is_odenet": True,
         "lr": 0.1,
         "train_dataset": torchvision.datasets.CIFAR10('datasets/cifar10',
-                            transform=torchvision.transforms.ToTensor(),
+                            transform=Compose([
+                                RandomApply([
+                                    ColorJitter(20,20,10,5)
+                                ]),
+                                RandomAffine(45, (0.2,0.2), (0.9,1.1)),
+                                RandomHorizontalFlip(),
+                                RandomCrop(32),
+                                ToTensor(),
+                                Normalize((0.4914, 0.4822, 0.4465), (0.2323, 0.1994, 0.2010))]),
                             train=True, download=True),
         "test_dataset": torchvision.datasets.CIFAR10('datasets/cifar10',
-                            transform=torchvision.transforms.ToTensor(),
+                            transform=transforms.ToTensor(),
                             train=False, download=True),
         "labels": {
             0: "airplane",
@@ -39,7 +48,15 @@ experiments = [
         "is_odenet": False,
         "lr": 0.1,
         "train_dataset": torchvision.datasets.CIFAR10('datasets/cifar10',
-                            transform=torchvision.transforms.ToTensor(),
+                            transform=Compose([
+                                RandomApply([
+                                    ColorJitter(20,20,10,5)
+                                ]),
+                                RandomAffine(45, (0.2,0.2), (0.9,1.1)),
+                                RandomHorizontalFlip(),
+                                RandomCrop(32),
+                                ToTensor(),
+                                Normalize((0.4914, 0.4822, 0.4465), (0.2323, 0.1994, 0.2010))]),
                             train=True, download=True),
         "test_dataset": torchvision.datasets.CIFAR10('datasets/cifar10',
                             transform=torchvision.transforms.ToTensor(),
@@ -62,7 +79,11 @@ experiments = [
         "is_odenet": True,
         "lr": 0.1,
         "train_dataset": torchvision.datasets.MNIST('datasets/mnist',
-                            transform=torchvision.transforms.ToTensor(),
+                            transform=Compose([
+                                RandomAffine(45, (0.2,0.2), (0.9,1.1)),
+                                RandomCrop(28),
+                                ToTensor(),
+                                Normalize((0.1307,), (0.3081,))]),
                             train=True, download=True),
         "test_dataset": torchvision.datasets.MNIST('datasets/mnist',
                             transform=torchvision.transforms.ToTensor(),
@@ -85,7 +106,11 @@ experiments = [
         "is_odenet": False,
         "lr": 0.1,
         "train_dataset": torchvision.datasets.MNIST('datasets/mnist',
-                            transform=torchvision.transforms.ToTensor(),
+                            transform=Compose([
+                                RandomAffine(45, (0.2,0.2), (0.9,1.1)),
+                                RandomCrop(28),
+                                ToTensor(),
+                                Normalize((0.1307,), (0.3081,))]),
                             train=True, download=True),
         "test_dataset": torchvision.datasets.MNIST('datasets/mnist',
                             transform=torchvision.transforms.ToTensor(),
@@ -114,7 +139,7 @@ for experiment in experiments:
                                                                batch_size=batch_size,
                                                                shuffle=True)),
                                  experiment["labels"],
-                                 training_length=150,
+                                 training_length=60,
                                  is_odenet=experiment["is_odenet"],
                                  batch_size=batch_size,
                                  lr=experiment["lr"])
