@@ -42,9 +42,9 @@ def trainODE(experiment_name, dataset_loaders
     makedirs(os.path.join(os.getcwd(), "experiments", name))
 
     if is_odenet:
-        model = NeuralODE(no_classes)
+        model = NeuralODE(no_classes).to(device)
     else:
-        model = ResNet(no_classes)
+        model = ResNet(no_classes).to(device)
 
     criterion = nn.CrossEntropyLoss().to(device)
     train_loader, test_loader = dataset_loaders
