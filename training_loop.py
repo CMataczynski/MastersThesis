@@ -28,7 +28,7 @@ def create_experiment_name(experiment_name, is_odenet):
 
 
 def trainODE(experiment_name, dataset_loaders
-            ,class_dict, training_length=150,
+            ,class_dict, in_size, training_length=150,
             is_odenet=True, batch_size=256, lr=0.1):
     '''
     experiment_name: string with name of the experiments
@@ -42,9 +42,9 @@ def trainODE(experiment_name, dataset_loaders
     makedirs(os.path.join(os.getcwd(), "experiments", name))
 
     if is_odenet:
-        model = NeuralODE(no_classes).to(device)
+        model = NeuralODE(in_size, no_classes).to(device)
     else:
-        model = ResNet(no_classes).to(device)
+        model = ResNet(in_size, no_classes).to(device)
 
     criterion = nn.CrossEntropyLoss().to(device)
     train_loader, test_loader = dataset_loaders
@@ -53,7 +53,7 @@ def trainODE(experiment_name, dataset_loaders
 
     lr_fn = learning_rate_with_decay(lr,
          batch_size, batch_denom=batch_size, batches_per_epoch=batches_per_epoch,
-         boundary_epochs=[30, 40, 50],decay_rates=[1, 0.1, 0.01, 0.001]
+         boundary_epochs=[60, 100, 140],decay_rates=[1, 0.1, 0.01, 0.001]
          )
 
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
@@ -113,8 +113,9 @@ def trainODE(experiment_name, dataset_loaders
                     best_acc = val_acc
                 writer.add_scalar("Accuracy/test", val_acc, itr//batches_per_epoch)
                 writer.add_scalar("F1_score/test", f1, itr//batches_per_epoch)
-                writer.add_scalar("NFE-F", f_nfe_meter.val, itr//batches_per_epoch)
-                writer.add_scalar("NFE-B", b_nfe_meter.val, itr//batches_per_epoch)
+                if is_odenet:
+                    writer.add_scalar("NFE-F", f_nfe_meter.val, itr//batches_per_epoch)
+                    writer.add_scalar("NFE-B", b_nfe_meter.val, itr//batches_per_epoch)
 
     labs = []
     preds = []

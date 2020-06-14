@@ -113,10 +113,10 @@ class Flatten(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, no_classes, feature_extraction_layers=6):
+    def __init__(self,in_size, no_classes, feature_extraction_layers=6):
         super().__init__()
         self.downsampling_layers = [
-            nn.Conv2d(3, 64, 3, 1),
+            nn.Conv2d(in_size, 64, 3, 1),
             ResBlock(64, 64, stride=2, downsample=conv1x1(64, 64, 2)),
             ResBlock(64, 64, stride=2, downsample=conv1x1(64, 64, 2)),
         ]
@@ -131,10 +131,10 @@ class ResNet(nn.Module):
 
 
 class NeuralODE(nn.Module):
-    def __init__(self, no_classes):
+    def __init__(self,in_size, no_classes):
         super().__init__()
         self.downsampling_layers = [
-            nn.Conv2d(3, 64, 3, 1),
+            nn.Conv2d(in_size, 64, 3, 1),
             ResBlock(64, 64, stride=2, downsample=conv1x1(64, 64, 2)),
             ResBlock(64, 64, stride=2, downsample=conv1x1(64, 64, 2)),
         ]
